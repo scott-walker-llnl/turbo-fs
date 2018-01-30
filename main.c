@@ -182,8 +182,9 @@ static void *init()
 	double power_unit, seconds_unit;
 	get_rapl_units(&power_unit, &seconds_unit);
 
-	set_rapl(1, POWER_LIMIT, power_unit, seconds_unit, 0);
-	set_turbo_limit(FREQ_HIGH);
+	//set_rapl(1, POWER_LIMIT, power_unit, seconds_unit, 0);
+	//set_turbo_limit(FREQ_HIGH);
+	fprintf(stderr, "set turbo limit to %lx\t%lx\n", get_turbo_limit(), get_turbo_limit1());
 
     // create worker threads
     for (t = 0; t < NUM_THREADS; t++) {
@@ -1216,8 +1217,17 @@ int main(int argc, char *argv[])
 	FILE *params = fopen("fsconfig", "r");
 	fscanf(params, "%x\n%x\n%lf\n%lf\n%u", &FREQ_HIGH, &FREQ_LOW, &POWER_LIMIT, &POWER_TDP, &MANUAL_TURBO);
 	uint64_t default_turbo = get_turbo_limit();
+	uint64_t default_turbo2 = get_turbo_limit1();
+	uint64_t plim;
+	read_msr_by_coord(1, 0, 0, IA32_PERF_CTL, &plim);
+	fprintf(stdout, "ratio limit %lx\ncore limit %lx\n", default_turbo, default_turbo2);
 	fprintf(stdout, "FSCONFIG:\n\tFREQ_HIGH %x\n\tFREQ_LOW %x\n\tPOWER_LIMIT %lf\n\tTDP %lf\n\tMANUAL_TURBO %u\n", 
 		FREQ_HIGH, FREQ_LOW, POWER_LIMIT, POWER_TDP, MANUAL_TURBO);
+	dump_rapl(stdout);
+	dump_platform_rapl();
+	dump_perf_limit();
+	set_perf(FREQ_HIGH, NUM_THREADS);
+	
 
     evaluate_environment();
     init();
@@ -1235,8 +1245,11 @@ int main(int argc, char *argv[])
 	double power_unit, seconds_unit;
 	get_rapl_units(&power_unit, &seconds_unit);
 
-	set_rapl(1, POWER_TDP, power_unit, seconds_unit, 0);
-	set_all_turbo_limit(default_turbo);
+	//set_rapl(1, POWER_TDP, power_unit, seconds_unit, 0);
+	fprintf(stderr, "default turbo is %lx\n", default_turbo);
+	fprintf(stderr, "default turbo1 is %lx\n", default_turbo2);
+	//set_all_turbo_limit(default_turbo);
+	//set_all_turbo_limit1(default_turbo2);
 
     if (verbose == 2){
        unsigned long long start_tsc,stop_tsc;
@@ -1264,6 +1277,9 @@ int main(int argc, char *argv[])
 
        printf("\n");
     }
+
+	dump_perf_limit();
+	set_perf(plim, NUM_THREADS);
 
     #ifdef CUDA
     free(structpointer);

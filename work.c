@@ -46,6 +46,7 @@
 //#define FREQ_LOW 0x2A
 //#define FREQ_HIGH 0x2D
 //#define MANUAL_TURBO 1
+#define NUMCORES 12
 extern unsigned FREQ_LOW;
 extern unsigned FREQ_HIGH;
 extern unsigned MANUAL_TURBO;
@@ -56,10 +57,12 @@ extern unsigned MANUAL_TURBO;
 int low_load_function(volatile unsigned long long addrHigh, unsigned int period) __attribute__((noinline));
 int low_load_function(volatile unsigned long long addrHigh, unsigned int period)
 {
+	//set_perf(0x18, 0);
 	if (MANUAL_TURBO)
 	{
 		//unsigned old_freq = get_turbo_limit();
-		set_turbo_limit(FREQ_LOW);
+		//set_turbo_limit(FREQ_LOW);
+		set_perf(FREQ_LOW, NUMCORES);
 	}
 
     int nap;
@@ -77,7 +80,8 @@ int low_load_function(volatile unsigned long long addrHigh, unsigned int period)
 
 	if (MANUAL_TURBO)
 	{
-		set_turbo_limit(FREQ_HIGH);
+		//set_turbo_limit(FREQ_HIGH);
+		set_perf(FREQ_HIGH, NUMCORES);
 	}
     return 0;
 }
