@@ -13,6 +13,7 @@ void disable_turbo(const unsigned tid);
 
 void get_rapl_units(double *power_unit, double *seconds_unit);
 void set_rapl(unsigned sec, double watts, double pu, double su, unsigned affinity);
+void set_rapl2(unsigned sec, double watts, double pu, double su, unsigned affinity);
 void set_perf(const unsigned freq, const unsigned numcores);
 void dump_rapl();
 //inline void disable_rapl();

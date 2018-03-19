@@ -46,7 +46,7 @@
 //#define FREQ_LOW 0x2A
 //#define FREQ_HIGH 0x2D
 //#define MANUAL_TURBO 1
-#define NUMCORES 12
+#define NUMCORES 8
 extern unsigned FREQ_LOW;
 extern unsigned FREQ_HIGH;
 extern unsigned MANUAL_TURBO;

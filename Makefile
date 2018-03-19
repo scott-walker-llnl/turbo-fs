@@ -29,8 +29,8 @@ LINUX_C_FLAGS=-fomit-frame-pointer -Wall -std=c99 -I. -DAFFINITY
 OPT_STD=-O2
 OPT_ASM=-O0
 LINUX_L_FLAGS=-lpthread -lrt -lm
-MSR_L_FLAGS=-L/home/walker8/libmsr/install/lib -lmsr
-MSR_I_FLAGS=-I/home/walker8/libmsr/install/include
+MSR_L_FLAGS=-L/home/walker8/lib/lib -lmsr
+MSR_I_FLAGS=-I/home/walker8/lib/include
 
 # source and object files of assembler routines
 ASM_FUNCTION_SRC_FILES=sse2_functions.c avx_functions.c fma_functions.c fma4_functions.c avx512_functions.c 

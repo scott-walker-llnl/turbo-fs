@@ -179,14 +179,7 @@ static void *init()
         fflush(stdout);
     }
 
-	double power_unit, seconds_unit;
-	get_rapl_units(&power_unit, &seconds_unit);
-
-	//set_rapl(1, POWER_LIMIT, power_unit, seconds_unit, 0);
-	//set_turbo_limit(FREQ_HIGH);
-	fprintf(stderr, "set turbo limit to %lx\t%lx\n", get_turbo_limit(), get_turbo_limit1());
-
-    // create worker threads
+	// create worker threads
     for (t = 0; t < NUM_THREADS; t++) {
         mdp->ack = 0;
         mdp->threaddata[t].thread_id = t;
@@ -1217,15 +1210,20 @@ int main(int argc, char *argv[])
 	FILE *params = fopen("fsconfig", "r");
 	fscanf(params, "%x\n%x\n%lf\n%lf\n%u", &FREQ_HIGH, &FREQ_LOW, &POWER_LIMIT, &POWER_TDP, &MANUAL_TURBO);
 	uint64_t default_turbo = get_turbo_limit();
-	uint64_t default_turbo2 = get_turbo_limit1();
+	uint64_t default_turbo2 = 0x0; // = get_turbo_limit1();
 	uint64_t plim;
-	read_msr_by_coord(1, 0, 0, IA32_PERF_CTL, &plim);
+	uint64_t aperf, mperf;
+	read_msr_by_coord(0, 0, 0, IA32_PERF_CTL, &plim);
+	read_msr_by_coord(0, 0, 0, MSR_IA32_APERF, &aperf);
+	read_msr_by_coord(0, 0, 0, MSR_IA32_MPERF, &mperf);
 	fprintf(stdout, "ratio limit %lx\ncore limit %lx\n", default_turbo, default_turbo2);
 	fprintf(stdout, "FSCONFIG:\n\tFREQ_HIGH %x\n\tFREQ_LOW %x\n\tPOWER_LIMIT %lf\n\tTDP %lf\n\tMANUAL_TURBO %u\n", 
 		FREQ_HIGH, FREQ_LOW, POWER_LIMIT, POWER_TDP, MANUAL_TURBO);
 	dump_rapl(stdout);
-	dump_platform_rapl();
+	//dump_platform_rapl();
 	dump_perf_limit();
+	set_turbo_limit(FREQ_HIGH);
+	fprintf(stderr, "set turbo limit to %lx\t%lx\n", get_turbo_limit(), get_turbo_limit1());
 	set_perf(FREQ_HIGH, NUM_THREADS);
 	
 
@@ -1245,11 +1243,23 @@ int main(int argc, char *argv[])
 	double power_unit, seconds_unit;
 	get_rapl_units(&power_unit, &seconds_unit);
 
-	//set_rapl(1, POWER_TDP, power_unit, seconds_unit, 0);
+	//set_rapl2(32, POWER_LIMIT, power_unit, seconds_unit, 0);
 	fprintf(stderr, "default turbo is %lx\n", default_turbo);
-	fprintf(stderr, "default turbo1 is %lx\n", default_turbo2);
-	//set_all_turbo_limit(default_turbo);
+	//fprintf(stderr, "default turbo1 is %lx\n", default_turbo2);
+	set_all_turbo_limit(default_turbo);
 	//set_all_turbo_limit1(default_turbo2);
+	
+	// force verbose output here
+	FILE *itreport = fopen("itreport", "w");
+    unsigned long long start_tsc,stop_tsc;
+	for(i = 0; i < mdp->num_threads; i++){
+          fprintf(itreport, "Thread %i: %llu iterations, tsc_delta: %llu\n",i,mdp->threaddata[i].iterations, mdp->threaddata[i].stop_tsc - mdp->threaddata[i].start_tsc );
+          iterations+=mdp->threaddata[i].iterations;
+          if (start_tsc > mdp->threaddata[i].start_tsc) start_tsc = mdp->threaddata[i].start_tsc;
+          if (stop_tsc < mdp->threaddata[i].stop_tsc) stop_tsc = mdp->threaddata[i].stop_tsc;
+       }
+       fprintf(itreport, "\ntotal iterations: %llu\n",iterations);
+	fclose(itreport);
 
     if (verbose == 2){
        unsigned long long start_tsc,stop_tsc;
@@ -1279,7 +1289,13 @@ int main(int argc, char *argv[])
     }
 
 	dump_perf_limit();
-	set_perf(plim, NUM_THREADS);
+	//set_perf(FREQ_LOW, NUM_THREADS);
+	uint64_t aperf2, mperf2;
+	read_msr_by_coord(0, 0, 0, MSR_IA32_APERF, &aperf2);
+	read_msr_by_coord(0, 0, 0, MSR_IA32_MPERF, &mperf2);
+	FILE *avgfrq = fopen("avgfrq", "w");
+	fprintf(avgfrq, "FS avg freq: %f\n", ((float) (aperf2 - aperf)) / ((float) (mperf2 - mperf)) * 2.6);
+	fclose(avgfrq);
 
     #ifdef CUDA
     free(structpointer);
